@@ -2,7 +2,7 @@ import telebot.types
 from telebot import TeleBot
 import sqlite3
 
-token = '6529165154:AAH_5yolucmi9bjeXhVHip6Pc45Vm0WVyAo'
+token = '6703507248:AAE3ErlqgjUQBayVjBzcz4Xy67XfpCHgtfc'
 bot = TeleBot(token)
 
 
@@ -13,6 +13,9 @@ id = ''
 role = ''
 
 in_system = False
+
+
+messages = []
 
 
 class User:
@@ -29,8 +32,36 @@ registered_user = User()
 
 
 
+product_id=''
+name=''
+descr=''
+price=''
+category=''
+class Product:
+    def init(self, product_id='', name='', descr='', price='', category=''):
+        self.product_id = product_id
+        self.name = name
+        self.descr = descr
+        self.price = price
+        self.category = category
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
+    messages.append(message.message_id)
     markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=False)
     btn_1 = telebot.types.KeyboardButton('/register')
     btn_2 = telebot.types.KeyboardButton('/buy')
@@ -42,22 +73,31 @@ def start(message):
     markup.row(btn_2, btn_3)
     markup.row(btn_4, btn_5)
     markup.row(btn_6)
-    bot.send_message(message.chat.id, 'Выберите действие:', reply_markup=markup)
+    bot_message = bot.send_message(message.chat.id, 'Выберите действие:', reply_markup=markup)
+    messages.append(bot_message.message_id)
 
 @bot.message_handler(commands=['register'])
 def register(message):
+    messages.append(message.message_id)
+    for i in messages:
+        bot.delete_message(message.chat.id, i)
+    messages.clear()
+
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,'
-                   'login VARCHAR(30), password VARCHAR(30))')
+    cursor.execute('CREATE TABLE IF NOT EXISTS products (product_id INTEGER PRIMARY KEY,'
+                   'category VARCHAR(30), name VARCHAR(30))')
     connection.commit()
     cursor.close()
     connection.close()
-    bot.send_message(message.chat.id, 'Начало регистрации. Введи логин: ')
+    bot_message = bot.send_message(message.chat.id, 'Начало регистрации. Введи логин: ')
+    messages.append(bot_message.message_id)
     bot.register_next_step_handler(message, create_login)
 
 
+
 def create_login(message):
+    messages.append(message.message_id)
     global login
     login = message.text
     connection = sqlite3.connect('database.db')
@@ -67,20 +107,23 @@ def create_login(message):
 
     for user in users:
         if login == user[1]:
-            bot.send_message(message.chat.id, f'Такой логин уже есть, введите новый логин:')
+            bot_message = bot.send_message(message.chat.id, f'Такой логин уже есть, введите новый логин:')
+            messages.append(bot_message.message_id)
             bot.register_next_step_handler(message, create_login)
             break
     else:
-        bot.send_message(message.chat.id, 'Отлично. Теперь введи пароль: ')
+        bot_message = bot.send_message(message.chat.id, 'Отлично. Теперь введи пароль: ')
+        messages.append(bot_message.message_id)
         bot.register_next_step_handler(message, create_password)
     cursor.close()
     connection.close()
 
 def create_password(message):
+    messages.append(message.message_id)
     global password
     password = message.text
-    bot.send_message(message.chat.id, 'Регистрация завершена. Добавление данных в БД...')
-    bot.send_message(message.chat.id, 'Данные добавлены. Для просмотра используй /me')
+    bot_message = bot.send_message(message.chat.id, 'Регистрация завершена.')
+    messages.append(bot_message.message_id)
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'INSERT INTO users (login, password) VALUES ( "{login}", "{password}" )')
@@ -94,10 +137,7 @@ def buy(message):
     # Ваш код для выполнения операции покупки
     bot.send_message(message.chat.id, 'Покупка выполнена успешно!')
 
-@bot.message_handler(commands=['sale'])
-def sale(message):
-    # Ваш код для выполнения операции продажи
-    bot.send_message(message.chat.id, 'Продажа выполнена успешно!')
+
 
 @bot.message_handler(commands=['login'])
 def login(message):
@@ -162,7 +202,7 @@ def logout(message):
     else:
         bot.send_message(message.chat.id, f'Вы не в системе. Пожалуйста войдите в систему')
 
-
+    bot.delete_message()
 
 
 
