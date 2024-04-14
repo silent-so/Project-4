@@ -1,4 +1,5 @@
 import telebot
+import sqlite3
 
 TOKEN = '7043497776:AAE3BnBDmwwvEGC3r1OxCibvURmNaRrC8Jw'
 bot = telebot.TeleBot(TOKEN)
@@ -11,6 +12,7 @@ def start(message):
 def add(message):
     bot.send_message(message.chat.id, 'Введите название:')
     bot.register_next_step_handler(message,item_name)
+
 
 def item_name(message):
     bot.send_message(message.chat.id,'Хорошо,теперь отправь характеристику товара')
@@ -32,6 +34,14 @@ def photo(message):
     bot.send_message(message.chat.id, 'Отлично!Добавляем ваш товар на склад...')
     bot.send_message(message.chat.id, 'Обновление...')
     bot.send_message(message.chat.id, 'Ваш товар добавлен на склад')
+
+@bot.callback_query_handler(func=lambda call:True)
+def get_callback(call):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM table WHERE category =''')
+    table = cursor.fetchall()
+
 
 
 bot.infinity_polling()
